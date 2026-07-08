@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mattia Ambrosini</title>
+<style>
+  @font-face{
+    font-family:"ABC Diatype";
+    src:url("fonts/ABCDiatype-Regular.otf") format("opentype");
+    font-weight:400;font-style:normal;font-display:swap;
+  }
+  @font-face{
+    font-family:"ABC Diatype";
+    src:url("fonts/ABCDiatype-RegularItalic.otf") format("opentype");
+    font-weight:400;font-style:italic;font-display:swap;
+  }
+  @font-face{
+    font-family:"ABC Diatype";
+    src:url("fonts/ABCDiatype-Medium.otf") format("opentype");
+    font-weight:500 700;font-style:normal;font-display:swap;
+  }
+  @font-face{
+    font-family:"ABC Diatype";
+    src:url("fonts/ABCDiatype-MediumItalic.otf") format("opentype");
+    font-weight:500 700;font-style:italic;font-display:swap;
+  }
+
+  :root{
+    --bg:#ffffff;
+    --ink-1:rgba(0,0,0,0.85);
+    --ink-2:rgba(0,0,0,0.60);
+    --ink-3:rgba(0,0,0,0.40);
+    --hair:rgba(0,0,0,0.10);
+    --grey:#C2C2C2;
+    --pad:clamp(14px,1.6vw,26px);
+    --font:Georgia, "Times New Roman", serif;
+    --home-size:16px;
+    --pop-size:13px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{background:var(--bg);color:var(--ink-1);}
+  body{font-family:var(--font);font-size:var(--home-size);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  /* no transitions anywhere — interactions are instant */
+  a{color:inherit;text-decoration:none;cursor:pointer;}
+  em{font-style:italic;}
+
+  /* ---------- HOME ---------- */
+  .index{
+    display:flex;flex-direction:column;
+    min-height:100vh;
+    padding:var(--pad);
+    font-size:var(--home-size);
+    line-height:1.3;
+  }
+  .index .line{display:block;color:var(--ink-1);width:max-content;max-width:100%;}
+  a.line:hover{opacity:.7;}
+  .head-cat{font-style:italic;margin-bottom:8px;}
+  .head-cat:not(:first-child){margin-top:16px;}
+  .head-cat em{font-style:italic;}
+  .top{margin-bottom:auto;}
+  .bottom{margin-top:auto;}
+  #projects{margin-bottom:1.3em;}
+  .foot .muted{color:var(--grey);}
+
+  /* ---------- OVERLAY ---------- */
+  #overlay{
+    position:fixed;inset:0;
+    display:none;
+    background:transparent;
+    z-index:50;
+  }
+  #overlay.open{display:block;}
+
+  .pop{
+    position:fixed;top:var(--pad);
+    background:var(--bg);
+    font-size:var(--pop-size);
+    line-height:1.32;
+  }
+
+  /* left popup = image + caption, top-left, content-height */
+  .pop-img{
+    left:var(--pad);
+    width:calc(50vw - var(--pad)*1.5);
+  }
+  /* slideshow box: 16:9, full column width, edge-to-edge cover */
+  .slideshow{position:relative;width:100%;aspect-ratio:16/9;background:rgba(0,0,0,.04);overflow:hidden;}
+  .slideshow img.slide{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;display:none;}
+  .slideshow.sl-nav{cursor:pointer;}
+
+  /* === SLIDESHOW EDIT LAYER — delete this CSS block (and its JS twin) for the final site === */
+  .slideshow[data-edit]{cursor:pointer;}
+  .slideshow[data-edit][data-over]{outline:2px solid var(--ink-1);outline-offset:-2px;}
+  .sl-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--ink-3);font-size:24px;line-height:1;pointer-events:none;}
+  .sl-manage{display:flex;flex-wrap:wrap;gap:6px;padding-top:9px;}
+  .sl-thumb{position:relative;width:58px;height:33px;background:rgba(0,0,0,.06);cursor:pointer;}
+  .sl-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .sl-thumb[data-sel]{outline:2px solid var(--ink-1);outline-offset:1px;}
+  .sl-remove{padding-top:9px;display:flex;gap:1.4em;}
+  .sl-remove a:hover{opacity:.7;}
+  /* === END SLIDESHOW EDIT LAYER === */
+  .cap{
+    display:flex;justify-content:space-between;align-items:flex-start;
+    gap:2em;padding-top:9px;
+  }
+  .controls{display:flex;gap:1.4em;white-space:nowrap;}
+  .controls a:hover{opacity:.7;}
+
+  /* right popup = extended text, right half, full-height divider */
+  .pop-txt{
+    left:50vw;
+    width:calc(50vw - var(--pad)*1.5);
+    padding-left:var(--pad);
+    border-left:1px solid var(--hair);
+    min-height:calc(100vh - var(--pad)*2);
+    max-height:calc(100vh - var(--pad)*2);
+    overflow:auto;
+    display:none;
+  }
+  #overlay.expanded .pop-txt{display:block;}
+
+  .txt-grid{
+    display:grid;grid-template-columns:1fr 1fr;
+    gap:0.5rem;align-items:start;
+  }
+  .body p{margin:0;}
+  .body p + p{margin-top:1.05em;}
+  /* caption under slideshow: project title (black) + what's shown (grey) */
+  .cap-desc{color:var(--ink-2);}
+  /* project-page template: sidebar + intro, then sections */
+  .sidebar div + div{margin-top:0;}
+  .sidebar .sp{height:1em;}
+  .sec-title em{font-style:italic;color:var(--ink-3);}
+  .pop-txt .sec{margin-top:1.9em;}
+  hr{border:0;border-top:1px solid rgba(0,0,0,0.22);margin:16px 0;}
+  .pop-txt hr{margin:2.6em 0 0.55em;}
+  .row-close{display:flex;justify-content:flex-end;}
+  .row-close a:hover{opacity:.7;}
+  .pop-txt .row-close + .txt-grid{margin-top:2.6em;}
+
+  /* ---------- ABOUT panel (right half) ---------- */
+  .about-panel{
+    position:fixed;top:0;left:50vw;
+    width:50vw;min-height:100vh;
+    padding:var(--pad);
+    background:var(--bg);
+    font-size:var(--pop-size);line-height:1.32;
+    overflow:auto;max-height:100vh;
+  }
+  .about-top{display:grid;grid-template-columns:0.9fr 1.1fr;gap:var(--pad);align-items:start;}
+  .meta div{white-space:pre-line;}
+  .meta a:hover{opacity:.7;}
+  .cv-row{display:grid;grid-template-columns:0.9fr 1.1fr;gap:var(--pad);align-items:start;}
+  .cv-row .entry + .entry{margin-top:1.1em;}
+
+  /* ---------- mobile ---------- */
+  @media (max-width:760px){
+    .pop-img{width:calc(100vw - var(--pad)*2);}
+    .pop-txt{left:var(--pad);width:calc(100vw - var(--pad)*2);border-left:0;padding-left:0;background:var(--bg);}
+    #overlay.expanded .pop-img{display:none;}
+    .about-panel{left:0;width:100vw;}
+    .about-top,.cv-row,.txt-grid{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+  <main class="index" id="index">
+    <div class="top">
+      <a class="line" href="#" data-act="home">Mattia Ambrosini</a>
+      <a class="line" href="#" data-act="about">About</a>
+    </div>
+    <div class="bottom">
+      <div id="projects"></div>
+      <div class="foot">
+        <span class="line muted" style="font-size: 13px">Last Updated: <span id="clock"></span></span>
+      </div>
+    </div>
+  </main>
+
+  <div id="overlay" aria-live="polite"></div>
+
+  <script>
+  (function(){
+    "use strict";
+
+    /* Home index: italic headers + clickable project lines (verbatim labels). */
+    var LIST = [
+      {head:'Exhibition / Installation / Event design'},
+      {label:'2026 – MYCELIA: Oltre il cappello', name:'MYCELIA: Oltre il cappello', type:'Exhibition design', key:'mycelia'},
+      {label:'2025 – ArTavola', name:'ArTavola', type:'Installation', key:'artavola'},
+      {label:'2025 – Circolando', name:'Circolando', type:'Installation', key:'circolando'},
+      {label:'2024 – EDICOLA21', name:'EDICOLA21', type:'Installation', key:'edicola21'},
+      {label:'2023 – Gut', name:'Gut', type:'Exhibition design', key:'gut'},
+      {head:'Product design'},
+      {label:'2026 – SECUNDA NATURA', name:'SECUNDA NATURA', type:'Product design', key:'secunda'},
+      {label:'2026 – Bodega', name:'Bodega', type:'Product design', key:'bodega'},
+      {label:'2026 – Meccano', name:'Meccano', type:'Product design', key:'meccano'},
+      {label:'2025 – Halma', name:'Halma', type:'Product design', key:'halma'}
+    ];
+    var PROJECTS = LIST.filter(function(x){ return !x.head; });
+
+    /* =========================================================================
+       PROJECT DATA  — one object per project, consumed by the reusable
+       project-page template (sidebar + intro + sections). Step 4 fills the
+       remaining keys; the template itself is defined once, below.
+    ========================================================================= */
+    var DATA = {
+      mycelia: {
+        title: 'MYCELIA: Oltre il cappello',
+        side: ['MYCELIA: Oltre il cappello','Exhibition concept','Pirelli Hangar Bicocca','Milano \u2013 2026','',"Master\u2019s thesis supervisors","Alessandro Colombo &amp; Franco Origoni"],
+        captions: [
+          "Entrance \u2013 Dim threshold posing a question",
+          "Mycelium \u2013 Introducing the organism and its networks",
+          "Mycelium \u2013 Introducing the organism and its networks",
+          "Connections \u2013 Mycorrhizae, lichens and forest networks",
+          "Connections \u2013 Mycorrhizae, lichens and forest networks",
+          "Connections \u2013 Mycorrhizae, lichens and forest networks",
+          "Transformations \u2013 Hyphae decomposing dead organic matter",
+          "Transformations \u2013 Hyphae decomposing dead organic matter",
+          "Invasions \u2013 Parasitic strategies colonizing living hosts",
+          "Signals \u2013 Olfactory, visual and electrical signals",
+          "Signals \u2013 Olfactory, visual and electrical signals",
+          "Exit \u2013 Carrying a fruiting fragment away",
+          "Floorplan \u2013 Mycelium colonizing the Shed",
+          "Poster \u2013 Mycelium-inspired graphics and lettering"
+        ],
+        intro: [
+          "When we think of a mushroom, we picture a cap: a reflex shaped by centuries of images that have only ever shown the fruiting body, the part that emerges from the ground, while leaving invisible the mycelium, the network of threads that makes up the real organism and lives hidden in the soil, in tree trunks, and in the tissues of other living things.",
+          "And yet it\u2019s the mycelium that does half the planet\u2019s work: it makes up a quarter of the Earth\u2019s biomass, keeps almost ninety percent of plants alive, breaks down dead matter, and moves through the carbon and nitrogen cycles. A huge biological protagonist that visual culture has never made visible.",
+          "The exhibition grows out of this gap between how important the mycelium is and how invisible it remains, and it tries to close that gap by turning the usual way of telling nature\u2019s story upside down. Instead of showing the mycelium from a distance, through photographs and models, it builds a space where the visitor finds themselves inside the organism and comes to know it by moving through it, wandering freely the way a hypha grows through the soil, with no fixed path and no single point from which to see it all.",
+          "Along the way, the visitor encounters the four ways the mycelium connects with the living world, mutualism, signaling, decomposition, and parasitism. Four independent logics, each with its own rules and consequences, which together keep the Earth\u2019s ecosystems running."
+        ],
+        sections: [
+          {title:'Concept', short:'Assonometria del percorso espositivo',
+           text:"Mycelia turns on its head the way we usually tell nature\u2019s story: rather than observing the mycelium from outside, it builds a space you move through from within, as if the visitor became a hypha growing through the soil, with no fixed path and no privileged point of view. Along the way, visitors discover the four relationships through which the mycelium connects with the living world \u2014 mutualism, signaling, decomposition, parasitism \u2014 giving back scale and centrality to an organism that visual culture has always left invisible."},
+          {title:'Visitor\u2019s route', short:'Pianta e flusso di visita', text:null},
+          {title:'Entrance', short:'Ingresso: tende e domanda iniziale',
+           text:"The exhibition entrance is designed to draw the visitor into the space, immersing them in a dimension unlike anything they\u2019re used to. The light is dim, the floor takes on a shape that isn\u2019t immediately legible, and a single question emerges from one of the curtains: \u201CWhat is a fungus?\u201D"},
+          {title:'Mycelium', short:'Spazio immersivo del micelio',
+           text:"The first section answers the question posed at the entrance, introducing the visitor to the mycelium through four fundamental traits, told through projections that emerge from the curtains. At the center of the section, an immersive space shows the visitor how the mycelium develops, forming networks and connections with others of its kind."},
+          {title:'Connections', short:'Micorrize, licheni, Wood Wide Web',
+           text:"Here the mycelium\u2019s bonds with other organisms take center stage, as it builds shared structures with them. Visitors move through mycorrhizae, the symbiosis that feeds over 90% of the world\u2019s land plants; lichens, where fungus and alga merge into a new organism; and the Wood Wide Web, the underground network linking the trees of a forest."},
+          {title:'Transformations', short:'Gli stadi della decomposizione',
+           text:"This part of the exhibition looks at the mycelium as the primary decomposer of terrestrial ecosystems. Hyphae secrete enzymes that break down dead matter (wood, leaves, carcasses) returning their elements to the cycle of life. Three separate points along the path trace the stages of decomposition, closing with the case of wood, to show what happens when fungi are absent from this process."},
+          {title:'Invasions', short:'Le strategie parassitarie',
+           text:"Here the focus shifts to the mycelium that penetrates a living organism to exploit it, not an exchange, but a one-way, extractive relationship, often lethal. Visitors move through the three parasitic strategies (biotrophic, necrotrophic, hemibiotrophic) illustrated through case studies in which the host is colonized. Here the visitor comes to understand how the mycelium reshapes the creatures it invades, molding them to its own ends."},
+          {title:'Signals', short:'Segnali olfattivi, visivi ed elettrici',
+           text:"Moving on, the exhibition turns to the mycelium\u2019s signals (olfactory, visual, and electrical) picked up by other organisms. Scents that draw in insects and mammals, lights tuned to nocturnal rhythms, impulses that travel along the hyphae. None of these messages is addressed to humans specifically: each speaks to an unknown recipient, seeking some benefit of its own."},
+          {title:'Exit', short:'Blocchi fruttiferi da riattivare',
+           text:"The final section closes the route by handing the mycelium back to the visitor. Having moved through it from within, here they carry away a fragment of it: fruiting blocks to reactivate at home, where the mycelium begins growing again. This mycelium, too, wants to expand, and it does so through space."}
+        ]
+      },
+
+      artavola: {
+        side: ['ArTavola','Exhibition & installation concept','Milan Central Station + Miart','Milano \u2013 2025','','Professor','Angelo Jelmini'],
+        intro: [
+          "The ArTavola project is conceived as a multidisciplinary intervention merging architecture, urban art, and participatory practices both within and outside the MiArt fair. Originating from the ambition to transform public spaces into sites of interaction and community engagement, the project initially materializes in Piazza Duca d\u2019Aosta. Here, a hybrid urban installation blending a skate park and communal space invites reflection on collective uses of urban land.",
+          "The narrative extends into MiArt\u2019s interior spaces, divided into two interconnected environments: the VIP Lounge, showcasing sponsor Supreme\u2019s identity through curated iconic skate-culture objects, and a publicly accessible exhibition room presenting the project systematically. This exhibition employs graphics, physical models, video content, and artworks from artists selected via an open call, highlighting the project\u2019s central themes: conviviality, collaboration, and cross-pollination between creative disciplines.",
+          "The collaboration with artist and graffiti writer Smash137, in partnership with Montana Cans, reinforces the intersection of street art and institutional recognition, introducing within the fair a profound exploration of graffiti\u2019s cultural value. The exhibition design mirrors the material and visual language of the outdoor intervention, emphasizing the project\u2019s core intention: connecting diverse spaces and formats through a cohesive and approachable narrative."
+        ],
+        sections: [],
+        captions: [
+          "Piazza Duca d\u2019Aosta, Milan Central Station \u2013 Hybrid skate park and communal space",
+          "Piazza Duca d\u2019Aosta, Milan Central Station \u2013 Hybrid skate park and communal space",
+          "Allianz MiCo, Milan \u2013 Custom graphics and decorations outside the venue",
+          "VIP Lounge, Miart \u2013 \u201cArt On Deck\u201d, an exhibition on Supreme\u2019s artistic skateboards",
+          "VIP Lounge, Miart \u2013 \u201cArt On Deck\u201d, an exhibition on Supreme\u2019s artistic skateboards",
+          "VIP Lounge, Miart \u2013 \u201cArTavola\u201d, an exhibition on the project\u2019s process",
+          "VIP Lounge, Miart \u2013 \u201cArTavola\u201d, an exhibition on the project\u2019s process",
+          "Cubes \u2013 Graphic design and lettering"
+        ]
+      },
+
+      circolando: {
+        side: ['Circolando','Exhibition & installation concept','Former Roman Circus Mediolanum site','Milano \u2013 2025','','Professors','Alessandro Colombo & Franco Origoni'],
+        intro: [
+          "Circolando is an urban installation project designed to evoke the memory of Milan\u2019s ancient Roman Circus\u2014a vanished landmark that profoundly shaped the city\u2019s history. Integrating into the contemporary urban fabric, the project employs visual and sensory language, utilizing scale, color, and sound to capture attention and momentarily disrupt everyday routines."
+        ],
+        sections: [
+          {title:'Concept', text:"The name \u201CCircolando\u201D blends \u201Ccircus\u201D with the concept of movement, symbolizing a dynamic exploration of Milan\u2019s Magenta neighborhood. It encourages residents to rediscover their city by reconnecting with forgotten places and stories, fostering new interactions with public spaces. Conceived as an urban game, the installation reinterprets figures and actions once central to the circus, presenting them in a contemporary light. Oversized, visually striking elements appear unexpectedly, challenging familiar perceptions of urban spaces."},
+          {title:'Route', text:"Each point along the route integrates sound, color, and form inspired by circus aesthetics, transforming the experience into an immersive narrative. Circus characters (jugglers, acrobats, and animals) are reimagined as symbolic installations that pique curiosity and encourage active participation. Beyond mere historical remembrance, Circolando serves as a bridge linking past and present, creatively reinterpreting collective memory through art and design."}
+        ],
+        captions: [
+          "Logo and public billboard design",
+          "Museo Civico Archeologico, Milan \u2013 Roman-era tower of the Mediolanum circus",
+          "Via Ansperto 5 \u2013 Installation on the emperor",
+          "Carrobbio \u2013 Installation on the chariot",
+          "Via Cappuccio \u2013 One of ten arches placed across the area",
+          "Via Sant\u2019Orsola \u2013 Installation on the spina, turned into a children\u2019s park",
+          "Via Circo \u2013 Remains of the circus curve, revealed and retold",
+          "Via Cappuccio \u2013 Night view of an arch",
+          "Via Cappuccio \u2013 The circus tower and the project explained",
+          "Via Cappuccio \u2013 Installation on the gladiators",
+          "Example of an urban poster",
+          "Map and placement of the installations across the circus area"
+        ]
+      },
+
+      edicola21: {
+        side: ['EDICOLA21','Installation concept','Mons. Dughera Square','Mortara (PV) \u2013 2024','','Bachelor\u2019s thesis supervisor','Anna Anzani'],
+        intro: [
+          "EDICOLA21 is an architectural reinterpretation of the traditional newspaper kiosk, aiming to preserve its historical value while updating its form and function.",
+          "The project introduces an octagonal structure that evokes the collective memory of the kiosk, yet redefines its identity as a space for interaction, rest, and cultural production."
+        ],
+        sections: [
+          {title:'Structure and use', text:"The kiosk has a dual nature: when closed, it appears as a silent, monochromatic, sculptural object \u2014 a \u201Cmonument to itself\u201D that pays tribute to a fading urban lifestyle. When opened, it reveals its active soul: a space dedicated to independent print culture, social exchange, and public rest. Although physically detached from the connected Speakeasy project, EDICOLA21 shares its core design principle of transformation: a mutable fa\u00e7ade that shifts according to use. Around the central structure, tables and seats echo the octagonal geometry, expanding the function of the kiosk into the public realm and reinforcing the idea of intentional urban occupation."}
+        ],
+        captions: [
+          "Closed structure with an encrypted sign",
+          "Basic function \u2013 selling newspapers and drinks",
+          "Urban exhibition \u2013 shutters turned into display cases",
+          "DJ set \u2013 the kiosk becomes a booth, concealing a sound system",
+          "Axonometric \u2013 basic use",
+          "Axonometric \u2013 exhibition",
+          "Axonometric \u2013 DJ set",
+          "Examples of urban posters"
+        ]
+      },
+
+      gut: {
+        side: ['Gut','Exhibition concept','Impluvium, Triennale Milano','Milano \u2013 2023','','Professors','Franco Origoni, Marcello Galbiati & Luca Vivanti'],
+        intro: [
+          "Gut is an exhibition design project dedicated to Dieter Rams and his work with Braun. The show unfolds across six distinct spaces, each with its own spatial and sensory identity, named according to the same logic Braun used to label its products. Rather than explaining minimalism, the design stages it, letting the visitor move through its gradual unfolding."
+        ],
+        sections: [
+          {title:'Concept', text:"The exhibition builds a progression from an initial chaos, a mirror of the pop capitalism of the 1960s, to the calm of minimalism. This evolution rests on two inversely proportional elements: light, which grows along the route, and sound, which fades. Visitors move from the dark, noisy first room to the peak of light and silence in the core space, turning the shift from disorder to purity into a spatial experience."},
+          {title:'Visitor\u2019s route', text:null},
+          {title:'Eingang', text:"A white cube acts as the show\u2019s \u201Ccover\u201D: outside, a spare graphic hints at its minimalist identity; inside, the historical framing of the pop, capitalist 1960s begins, the antithesis of Rams. Here the visitor puts on the shoe covers needed to enter the white spaces."},
+          {title:'Zimmer 1', text:"A dark, dense space where a single spotlight lights up the objects on display one by one: each switches on and emits a sound, building toward a maximum overlap of noise. Without any explanation, the room conveys the \u201Cchaos\u201D of pop, disorienting the visitor just as the advertising of the era once did."},
+          {title:'Zimmer 2', text:"After the chaos, a moment of rest. The dichotomy between pop and minimalism is introduced through a visual comparison: on one side, vibrant color; on the other, refined simplicity. A television from the previous room, disassembled and mounted on the wall, becomes a symbol of the essential."},
+          {title:'Zimmer 3', text:"A further step toward minimalism, with the spaces growing barer. At the center, a display shaped like the famous T3 dial points intermittently to ten of Rams\u2019s sketches, while the wall lights up with the keyword of each of his ten principles of good design."},
+          {title:'Zimmer 4', text:"The central room, where the concept and the brand\u2019s philosophy merge. White walls, floors, and ceilings strip away every distraction, letting the objects speak. The Braun products, displayed without labels, cast onto the floor the shadow of one of Rams\u2019s most iconic graphics, that of the RT20 radio."},
+          {title:'Zimmer 5', text:"A comparison between past and present. The space borrows the icons and cantilevered displays of the Apple Store, wryly pairing an Apple product with the Rams x Braun object that inspired it. Here the visitor removes the shoe covers and moves on."}
+        ],
+        captions: [
+          "Eingang \u2013 White cube framing the 1960s",
+          "Zimmer 1 \u2013 Spotlit objects building to chaos",
+          "Zimmer 2 \u2013 Pop versus minimalism",
+          "Zimmer 3 \u2013 The T3 dial and ten principles",
+          "Zimmer 4 \u2013 Braun objects and the RT20 shadow",
+          "Zimmer 5 \u2013 Apple Store comparison",
+          "Milan Cadorna Station \u2013 Urban billboards",
+          "Poster \u2013 Graphic design"
+        ]
+      },
+
+      secunda: {
+        side: ['Secunda Natura. Nothing Here is Just a Wall','Product','Salone Raritas @ Salone del Mobile','21 - 26 April 2026, Milan Design Week','','Parasite 2.0 x Bianco67','Design team: Luca Marullo, Eugenio Cosentino, Stefano Colombo, Noemi Giussani, Fabio Lucietto, Antoni Martorell, Mattia Ambrosini'],
+        intro: [
+          "For the first edition of Salone Raritas \u2014 the new Salone del Mobile.Milano platform dedicated to collectible design and high-end craftsmanship \u2014 Bianco67 presents Secunda Natura, developed with the design and research studio Parasite 2.0. The project reactivates stone fragments normally discarded in production, turning reclaimed travertine into structural and expressive elements. The result is a modular system of pieces sitting between object and architecture \u2014 a wall-mounted element with integrated functions, a vertical element with a mirror, and a coffee table \u2014 that suggest uses without rigidly defining them.",
+          "Ph. Luca Caizzi"
+        ],
+        sections: [
+          {title:'Approach', text:"Secunda Natura builds on the XC Objects series, shown between 2024 and 2025 in Milan, Miami and Naples. Six-axis robotic fabrication pushes the stone to an almost artisanal level of precision, creating a dialogue between innovation and decorative tradition. Surfaces carry patterns evoking classical, marine imagery, while the travertine \u2014 from white and yellow to warmer, reddish tones \u2014 builds a layered material narrative, and steel inserts let the system scale from furniture to architecture. Underlying it all is a reflection on waste: discarded travertine reinterpreted as both a resource and a trace of how production, image and taste are changing."},
+          {title:'Collaboration', text:"The partnership between Bianco67 and Parasite 2.0 grows out of an ongoing dialogue between technical expertise and design inquiry: on one side the company\u2019s command of craft, technology and production, on the other the studio\u2019s speculative approach to how we inhabit space. Together they give natural stone a renewed centrality in contemporary design, turning the production process itself into expressive content."}
+        ],
+        captions: [
+          "Booth 4 \u2013 Salone Raritas, Salone del Mobile 2026",
+          "Booth 4 \u2013 Salone Raritas, Salone del Mobile 2026",
+          "Booth 4 \u2013 Salone Raritas, Salone del Mobile 2026",
+          "Wall panel 1 \u2013 White travertine marble and stainless steel",
+          "Wall panel 1 \u2013 Detail",
+          "Wall panel 1 \u2013 Detail",
+          "Wall panel 1 \u2013 Bright side",
+          "Wall panel 1 \u2013 Dark side",
+          "Wall panel 1 \u2013 Detail",
+          "Wall panel 2 \u2013 Red travertine marble, stainless steel and flowers",
+          "Wall panel 2 \u2013 Detail",
+          "Wall panel 2 \u2013 Detail",
+          "Wall panel 2 \u2013 Sculpting process",
+          "Wall panel 2 \u2013 Sculpting process, detail",
+          "Wall panel 1 and coffee table",
+          "Coffee table \u2013 Vatican white travertine marble and stainless steel",
+          "Coffee table \u2013 Detail",
+          "Coffee table \u2013 Detail",
+          "Coffee table \u2013 Sculpting robot shaping the tabletop"
+        ]
+      },
+
+      bodega: {
+        side: ['Bodega \u2013 cabinet','Product','ArchiThoughts\u2013ArchiTouch','FENIX\u00ae Scenario, 21 - 26 April 2026, Milan Design Week','','Parasite 2.0 x Bianco67','Design team: Luca Marullo, Eugenio Cosentino, Stefano Colombo, Noemi Giussani, Fabio Lucietto, Antoni Martorell, Mattia Ambrosini'],
+        intro: [
+          "Bodega \u2013 Cabinet was developed by Parasite 2.0 for the third chapter of ArchiThoughts\u2013ArchiTouch, curated by Federica Sala at FENIX Scenario during Milan Design Week 2026. The piece takes mobile street-food structures and multifunctional domestic furniture as its starting points, working through the idea of micro-architecture as something that shapes social interaction \u2014 an object that reorganizes the space around it and sits between body, object and environment.",
+          "Artwork by Iacopo Costanzo \u2014 Ph. Claudia Zalla"
+        ],
+        sections: [
+          {title:'Structure', text:"The cabinet works as a multi-use element, closer to the tradition of large furnishing pieces that structure a room at a reduced architectural scale than to a standalone object. It also served as a way to test Arpa\u2019s materials: bending and stressing them to see how far they could be pushed formally, and working with their relationship to light to obtain surfaces that diffuse illumination \u2014 in some cases becoming light sources in themselves."},
+          {title:'Exhibition', text:"ArchiThoughts\u2013ArchiTouch is presented by Arpa\u00ae together with the Broadview Materials brands FENIX\u00ae, Formica\u00ae, Homapal\u00ae and Getacore\u00ae. The exhibition gathers six international studios \u2014 Marion Mailaender, Parasite 2.0, RedDuo Studio, STORAGEMILANO, Studio GGSV and ZIMMER \u2014 within an installation designed by (AB)NORMAL. ArchiThoughts\u2013ArchiTouch | Milan Design Week 2026 \u2014 Curated by Federica Sala \u2014 April 14th \u2013 26th \u2014 FENIX Scenario, Foro Buonaparte 66, Milan"}
+        ],
+        captions: [
+          "Cabinet \u2013 Front view",
+          "Cabinet \u2013 Back view, artwork by Jacopo Costanzo",
+          "Cabinet \u2013 Detail",
+          "Cabinet \u2013 Detail",
+          "Cabinet \u2013 ArchiThoughts, ArchiTouch 2026",
+          "Cabinet \u2013 ArchiThoughts, ArchiTouch 2026"
+        ]
+      },
+
+      meccano: {
+        side: ['Meccano furniture system','Product concept','2025','Designed by me'],
+        intro: [
+          "During my internship at Parasite 2.0, while the studio was developing the new concept for the collaboration with Bianco67, I worked on this furniture system built around metallic joints that connect travertine elements into larger pieces.",
+          "Reclaimed travertine carries the mass and surface, machined steel carries the structure, and the two materials stay legible even where they meet. From this shared vocabulary of stone blocks and star-splined joints, I developed a small family of pieces, a table, a vertical screen, suspended and floor lights, and a console, as variations on the same grammar."
+        ],
+        sections: [
+          {title:'System', text:"The system rests on a single detail: a star-splined steel connector housed in the rounded terminals of each stone block. The fluted profile lets the elements lock at fixed angular steps, so each connection can be rotated and set in a different position, turning a static junction into an adjustable pivot, and one set of parts into many possible configurations. The joint shifts role across the collection: it grounds and levels the table, holds the stacked panels of the screen, suspends the luminous tube in the lights, and in the console appears at every junction as the visible ornament of the object."},
+          {title:'', text:"Images made with Blender\u00ae"}
+        ],
+        captions: [
+          "The full furniture collection built on the system",
+          "System detail \u2013 the \u201cstar\u201d metal joint in the stone"
+        ]
+      },
+
+      halma: {
+        side: ['Halma glasses','Product concept','2024','Designed by me'],
+        intro: [
+          "Halma is a set of glasses designed to work in two ways: on their own, or slotted into a marble base that holds them as a group. Each glass has a base shaped into small hemispheres, a detail that lets it stand stably on any surface while also locking into the tray, a slab of Verde Alpi marble carved with matching hemispherical hollows. Together they form a piece that keeps the glasses in order, makes them easy to carry, and doubles as a centerpiece."
+        ],
+        sections: [
+          {title:'Details', text:"The whole project rests on a single geometric detail: the domed underside of each glass. The rounded feet keep the glass steady when it stands alone, and the same shape drops into the carved seats of the tray, so nine glasses align into a compact grid."},
+          {title:'', text:"The tray isn\u2019t just storage but an object in its own right, the deep green marble against the clear glass turns a functional holder into a table decoration. The name Halma comes from the game that inspired Chinese checkers, played with rounded pegs that settle into hemispherical holes, the same fit between sphere and hollow that defines how the glasses meet their base."},
+          {title:'', text:"Images made with Blender\u00ae"}
+        ],
+        captions: [
+          "Set of glasses in the custom-made tray",
+          "Top view",
+          "Detail of a single glass, filled with beer"
+        ]
+      }
+    };
+    function projectData(p){
+      var d = p.key && DATA[p.key];
+      if(d) return d;
+      /* graceful fallback until Step 4 fills the data in */
+      return { title:p.name, side:[p.name, p.type], intro:[], sections:[], captions:[] };
+    }
+
+    var BODY_A = [
+      'Vestibulum et dignissim magna. Nullam at ultrices felis. Suspendisse facilisis sagittis sem sit amet tempor. Nam sit amet nibh et enim laoreet porta sit amet vel purus. Maecenas augue velit, feugiat in maximus id, auctor vel ex. Integer placerat massa nec tellus convallis aliquet.',
+      'Nam lobortis lectus mi, vel molestie neque dictum at. Vivamus sed sapien fermentum, fermentum metus ut, efficitur nunc.',
+      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut nisl metus, accumsan id eros id, vehicula tincidunt nisl. Nulla sit amet urna ut mi tempor euismod. Fusce elementum sapien eget elit sodales fringilla. Pellentesque et nulla vel velit malesuada fermentum vitae vitae justo. Nulla dignissim volutpat interdum. Pellentesque at molestie tortor. Proin magna ante, fermentum ac elementum at, lacinia et arcu.'
+    ];
+    var BODY_B = [
+      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam sed elit semper, tincidunt dui eleifend, tincidunt diam. Sed efficitur nunc ut libero venenatis, eu fringilla diam porttitor. Morbi pellentesque eros elit, et finibus risus laoreet vel. Donec eget euismod ante. Integer vitae lorem eget elit molestie aliquet ut eget massa. Proin a auctor turpis. Nunc condimentum magna vitae nulla semper, at dignissim enim condimentum.',
+      'Ut quis dui ultricies, sagittis lorem eu, ornare lorem. Donec mauris massa, fringilla et neque quis, tempor blandit arcu. Integer hendrerit viverra augue vitae suscipit. Sed aliquam mauris nunc, eu elementum felis suscipit vitae. Nam a enim fermentum, volutpat neque eu, faucibus nisi. Fusce mattis arcu non diam feugiat ultrices. Suspendisse malesuada eros ac facilisis tincidunt.',
+      'Cras in blandit dolor. Fusce nisi nibh, vestibulum sagittis sollicitudin lacinia, ultrices at sem. Cras faucibus iaculis ipsum in congue. Nulla vehicula rutrum felis, a tempus odio. Duis ut semper eros. Donec ut fermentum enim. Etiam in fermentum orci. Aenean a maximus metus, ac mollis nisi. Aenean nec ex non turpis placerat bibendum at eu neque.',
+      'Phasellus at augue nisl. Aenean a erat leo. Proin porttitor elit eget leo semper pretium. Duis lobortis accumsan lacus non bibendum. Morbi a felis arcu. Etiam faucibus nisi a mollis condimentum. Nullam varius hendrerit luctus. Suspendisse ultricies elit eget nisl viverra, sit amet interdum metus eleifend. Nulla at elit lobortis ligula fermentum venenatis. Nullam at tincidunt purus.',
+      'Nam quis dolor pretium, elementum sapien in, suscipit massa. Integer luctus sagittis urna et porta. Quisque a gravida nibh, eget aliquam enim. Etiam dapibus eros ultrices, pellentesque diam id, mattis enim. Suspendisse quis odio efficitur, posuere lorem eu, maximus lectus. In cursus ut turpis sed malesuada. Curabitur a molestie nisi.'
+    ];
+
+    function paras(arr){ return arr.map(function(p){return '<p>'+p+'</p>';}).join(''); }
+    function lineLabel(p){ return p.label; }
+
+    /* ---------- build home list ---------- */
+    var wrap = document.getElementById('projects');
+    LIST.forEach(function(item){
+      if(item.head){
+        var h = document.createElement('div');
+        h.className = 'line head-cat';
+        h.innerHTML = '<em></em>';
+        h.firstChild.textContent = item.head;
+        wrap.appendChild(h);
+        return;
+      }
+      var a = document.createElement('a');
+      a.className = 'line';
+      a.href = '#';
+      a.setAttribute('data-act','project');
+      a.setAttribute('data-i', PROJECTS.indexOf(item));
+      a.textContent = item.label;
+      wrap.appendChild(a);
+    });
+
+    /* ---------- overlay machinery ---------- */
+    var overlay = document.getElementById('overlay');
+    var slideTimer = null;
+    var capTimer = null;
+
+    function clear(){
+      if(slideTimer){ clearInterval(slideTimer); slideTimer = null; }
+      if(capTimer){ clearInterval(capTimer); capTimer = null; }
+      overlay.className = '';
+      overlay.innerHTML = '';
+      document.body.style.overflow = '';
+    }
+    function closeAll(){ clear(); }
+    function closeTxt(){ overlay.classList.remove('expanded'); }
+
+    /* click in the void → close both */
+    overlay.addEventListener('click', function(e){
+      if(e.target === overlay) closeAll();
+    });
+    document.addEventListener('keydown', function(e){
+      if(e.key === 'Escape') closeAll();
+    });
+
+    /* caption slot under the slideshow (filled by startCaptionCycle) */
+    function creditImg(){
+      return '<div class="credit" id="cap-sec"></div>';
+    }
+    /* caption under the slideshow: painted in lock-step with the image cycle.
+       No own timer — ssCycle drives the shared index so image N always shows
+       caption N. */
+    var capPaint = null;   // function(idx) set up per open project
+    function startCaptionCycle(title, caps){
+      var el = overlay.querySelector('#cap-sec');
+      capPaint = null;
+      if(!el) return;
+      capPaint = function(idx){
+        var cap = caps.length ? caps[idx % caps.length] : '';
+        el.innerHTML = '<div class="cap-title">' + title + '</div>' +
+                       (cap ? '<div class="cap-desc">' + cap + '</div>' : '');
+      };
+      capPaint(0);
+    }
+
+    /* ---------- slideshow store — per-image sidecars + manifest ----------
+       The host only lets us persist small, pre-existing '*.state.json' files
+       whose name has NO extra dots. So instead of one huge inline store we use:
+         - manifest  '.slideshow.state.json'          = { key: imageCount }
+         - one image  '.slideshow-<key>-<i>.state.json' = { u:<dataURL> }
+       Each file stays well under the size cap. Images are baked as JPEG. */
+    var SS_MANIFEST = 'assets/slideshow.json';
+    var SS_SLOTS = {p1:40,p2:40,p3:40,p4:40,p5:40,p6:40,p7:40,p8:40,p9:40}; // pre-created capacity/project
+    function ssSlots(key){ return SS_SLOTS[key] || 40; }
+    function ssImgFile(key,i){ return 'assets/slideshow-'+key+'-'+i+'.json'; }
+
+    var ssStore = {};                 // key -> [dataURL,...] in memory
+    var ssManifest = null;            // cached only on success
+    // Fetch a sidecar with retries — the editor preview can drop the first
+    // request before its auth token is ready; failures must not be cached.
+    function ssFetchJSON(name, tries){
+      tries = tries==null ? 4 : tries;
+      return fetch(name, {cache:'no-store'})
+        .then(function(r){ if(!r.ok) throw new Error('http '+r.status); return r.json(); })
+        .catch(function(){
+          if(tries<=1) return null;
+          return new Promise(function(res){ setTimeout(res,300); })
+            .then(function(){ return ssFetchJSON(name, tries-1); });
+        });
+    }
+    function ssLoadManifest(){
+      if(ssManifest) return Promise.resolve(ssManifest);
+      return ssFetchJSON(SS_MANIFEST).then(function(j){
+        if(j && typeof j==='object'){ ssManifest = j; return j; }
+        return {};   // transient miss: don't cache, retry on next open
+      });
+    }
+    function ssLoadKey(key){
+      if(ssStore[key] && ssStore[key].length) return Promise.resolve(ssStore[key]);
+      return ssLoadManifest().then(function(m){
+        var n = m[key]|0, reqs = [];
+        if(!n){ ssStore[key] = []; return ssStore[key]; }
+        for(var i=0;i<n;i++){ (function(idx){
+          reqs.push(ssFetchJSON(ssImgFile(key,idx)).then(function(j){ return j && j.u ? j.u : null; }));
+        })(i); }
+        return Promise.all(reqs).then(function(urls){
+          ssStore[key] = urls.filter(Boolean);
+          return ssStore[key];
+        });
+      });
+    }
+
+    /* ---- writes (editor only) ---- */
+    function ssWrite(name, obj){
+      var w = window.omelette && window.omelette.writeFile;
+      if(!w) return Promise.resolve();
+      return Promise.resolve(w(name, JSON.stringify(obj))).catch(function(){});
+    }
+    // Persist one project's images to per-image sidecars, then update manifest.
+    function ssSave(key){
+      var w = window.omelette && window.omelette.writeFile;
+      if(!w) return Promise.resolve();
+      if(!key){ return Promise.all(Object.keys(ssStore).map(function(k){ return ssSave(k); })); }
+      var arr = ssStore[key] || [], cap = ssSlots(key);
+      var prev = (ssManifest && ssManifest[key]) || 0;
+      var wrote = Math.min(arr.length, cap), chain = Promise.resolve();
+      for(var i=0;i<wrote;i++){ (function(idx){
+        chain = chain.then(function(){ return ssWrite(ssImgFile(key,idx), {u:arr[idx]}); });
+      })(i); }
+      for(var j=wrote;j<Math.min(prev,cap);j++){ (function(idx){   // clear freed slots
+        chain = chain.then(function(){ return ssWrite(ssImgFile(key,idx), {}); });
+      })(j); }
+      return chain.then(function(){
+        ssManifest = ssManifest || {};
+        ssManifest[key] = wrote;
+        return ssWrite(SS_MANIFEST, ssManifest);
+      });
+    }
+    function ssEncode(file){
+      return createImageBitmap(file).then(function(bm){
+        var cap=1400, scale=Math.min(1, cap/Math.max(bm.width,bm.height));
+        var w=Math.max(1,Math.round(bm.width*scale)), h=Math.max(1,Math.round(bm.height*scale));
+        var cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+        var ctx=cv.getContext('2d');
+        ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h);   // flatten alpha (jpeg fallback)
+        ctx.drawImage(bm,0,0,w,h);
+        if(bm.close) bm.close();
+        var webp = cv.toDataURL('image/webp',0.82);
+        return webp.indexOf('image/webp')>-1 ? webp : cv.toDataURL('image/jpeg',0.82);
+      });
+    }
+    /* shared with the (removable) edit layer */
+    window.__ss = { store:ssStore, save:ssSave, encode:ssEncode, render:ssRender, cycle:ssCycle, loadKey:ssLoadKey, slots:ssSlots };
+
+    function slideshowHTML(i){
+      return '<div class="slideshow" data-key="p'+(i+1)+'"></div>';
+    }
+    function ssRender(box){
+      var key=box.getAttribute('data-key');
+      var imgs=ssStore[key]||[];
+      box.querySelectorAll('img.slide').forEach(function(n){ n.remove(); });
+      var frag=document.createDocumentFragment();
+      imgs.forEach(function(u,idx){
+        var im=document.createElement('img');
+        im.className='slide'; im.src=u; im.alt='';
+        im.style.display = idx===0 ? 'block' : 'none';
+        frag.appendChild(im);
+      });
+      box.insertBefore(frag, box.firstChild);
+    }
+    // Show a specific slide index (wraps) and keep the caption in lock-step.
+    function ssShow(box, i){
+      var slides=[].slice.call(box.querySelectorAll('img.slide'));
+      if(!slides.length) return;
+      i = ((i % slides.length) + slides.length) % slides.length;
+      slides.forEach(function(s,k){ s.style.display = k===i ? 'block' : 'none'; });
+      box.__idx = i;
+      if(capPaint) capPaint(i);
+    }
+    function ssAdvance(box, step){ ssShow(box, (box.__idx||0) + step); }
+    // (re)start the automatic 3s cycle for the open slideshow
+    function ssAuto(box){
+      if(slideTimer){ clearInterval(slideTimer); slideTimer=null; }
+      var slides=box.querySelectorAll('img.slide');
+      if(slides.length<=1) return;
+      slideTimer=setInterval(function(){ ssAdvance(box, 1); }, 3000);
+    }
+    function ssCycle(box){
+      box.__idx = 0;
+      // Manual navigation: click the image to move (left third = previous,
+      // rest = next). Bound once; skipped while the edit layer owns clicks.
+      if(!box.__navBound){
+        box.__navBound = true;
+        box.addEventListener('click', function(e){
+          if(box.hasAttribute('data-edit')) return;   // edit layer handles clicks
+          var r = box.getBoundingClientRect();
+          var back = (e.clientX - r.left) < r.width * 0.3;
+          ssAdvance(box, back ? -1 : 1);
+          ssAuto(box);   // restart autoplay after a manual jump
+        });
+      }
+      if(!box.hasAttribute('data-edit')) box.classList.add('sl-nav');
+      ssAuto(box);
+    }
+    function ssExpected(key){ return ssManifest ? (ssManifest[key]|0) : -1; }
+    // Load with self-healing retries: the editor preview can take several
+    // seconds before sidecar fetches are authorised, so keep retrying until
+    // we actually have the manifest's expected images (or it truly says 0).
+    function ssEnsureLoaded(key, tries){
+      tries = tries||0;
+      return ssLoadKey(key).then(function(urls){
+        var expected = ssExpected(key);
+        var ok = (expected===0) || (expected>0 && urls && urls.length>=expected) || (urls && urls.length>0 && expected<0);
+        if(ok || tries>=15) return urls||[];
+        delete ssStore[key];   // force a fresh fetch next round
+        return new Promise(function(res){ setTimeout(res,500); })
+          .then(function(){ return ssEnsureLoaded(key, tries+1); });
+      });
+    }
+    function startSlideshow(){
+      var box = overlay.querySelector('.slideshow');
+      if(!box) return;
+      ssEnsureLoaded(box.getAttribute('data-key')).then(function(){
+        if(overlay.querySelector('.slideshow') !== box) return;  // user navigated away
+        if(window.__slideshowEditor){ window.__slideshowEditor(box); ssCycle(box); }
+        else { ssRender(box); ssCycle(box); }
+      });
+    }
+    /* ---------- reusable project-page template (right popup) ---------- */
+    function projectTemplateHTML(d){
+      var sidebar =
+        '<div class="credit sidebar">'+
+          (d.side||[]).map(function(l,idx){
+            if(l==='') return '<div class="sp"></div>';
+            if(idx===1) return '<div><em>'+l+'</em></div>';
+            return '<div>'+l+'</div>';
+          }).join('')+
+        '</div>';
+      var sections = (d.sections||[]).map(function(s){
+        return '<div class="txt-grid sec">'+
+            '<div class="sec-title">'+s.title+'</div>'+
+            '<div class="body">'+ (s.text ? '<p>'+s.text+'</p>' : '') +'</div>'+
+          '</div>';
+      }).join('');
+      return ''+
+        '<div class="txt-grid">'+
+          sidebar+
+          '<div class="body intro">'+ paras(d.intro||[]) +'</div>'+
+        '</div>'+
+        '<hr>'+
+        '<div class="row-close"><a data-close="txt">(Close)</a></div>'+
+        sections;
+    }
+
+    function openProject(i){
+      var p = PROJECTS[i];
+      var d = projectData(p);
+      overlay.innerHTML =
+        '<div class="pop pop-img">'+
+          slideshowHTML(i)+
+          '<div class="cap">'+
+            creditImg()+
+            '<div class="controls"><a data-more="1">(More…)</a><a data-close="all">(Close)</a></div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="pop pop-txt">'+
+          projectTemplateHTML(d)+
+        '</div>';
+      overlay.className = 'open';
+      document.body.style.overflow = 'hidden';
+      startSlideshow();
+      startCaptionCycle((d.side&&d.side[0])||d.title, d.captions || []);
+
+      overlay.querySelector('[data-more]').addEventListener('click', function(e){
+        e.preventDefault(); overlay.classList.add('expanded');
+      });
+      overlay.querySelectorAll('[data-close]').forEach(function(c){
+        c.addEventListener('click', function(e){
+          e.preventDefault();
+          if(c.getAttribute('data-close') === 'txt') closeTxt();
+          else closeAll();
+        });
+      });
+    }
+
+    /* ---------- about panel ---------- */
+    function openAbout(){
+      overlay.innerHTML =
+      '<div class="about-panel">'+
+        '<div class="about-top">'+
+          '<div class="meta credit">'+
+            '<div>Mattia Ambrosini</div>'+
+            '<div>Exhibition &amp; Interior designer</div>'+
+            '<div>Milan</div>'+
+            '<div><a href="mailto:ambrosini.mattia@yahoo.it">ambrosini.mattia@yahoo.it</a></div>'+
+            '<div><a href="https://www.instagram.com/ambrosinimattia/">@ambrosinimattia</a></div>'+
+          '</div>'+
+          '<div class="body"><p>I\u2019m a 24-year-old designer based in Milan, working between exhibition design and visual identity.</p><p>I trained in interior design at Politecnico di Milano and completed a master\u2019s in exhibition design at Poli.Design. I like projects where a space has to carry an idea, where layout, graphics and content are doing the same job, and I\u2019m comfortable taking one from research and concept through to renderings, drawings and the printed pieces that hold a show together.</p></div>'+
+        '</div>'+
+        '<hr>'+
+        '<div class="cv-row"><div>Curriculum Vitae</div><div class="row-close"><a data-close="all">(Close)</a></div></div>'+
+        '<hr>'+
+        '<div class="cv-row">'+
+          '<div><em>Education</em></div>'+
+          '<div>'+
+            '<div class="entry"><strong>Poli.Design, Milan</strong> \u2014 IDEA Exhibition Design Master. Thesis: \u201CMYCELIA, Oltre il cappello\u201D \u2014 an immersive exhibition on fungi and mycelial networks conceived for the Shed at Pirelli HangarBicocca. I developed the concept, spatial design, graphic identity and the show\u2019s curatorial texts. <em>2024\u20132026</em></div>'+
+            '<div class="entry"><strong>Politecnico di Milano</strong> \u2014 Interior Design, Bachelor\u2019s Degree (BSc). <em>2021\u20132024</em></div>'+
+            '<div class="entry"><strong>Liceo Scientifico Niccol\u00F2 Copernico, Udine.</strong> <em>2016\u20132021</em></div>'+
+          '</div>'+
+        '</div>'+
+        '<hr>'+
+        '<div class="cv-row">'+
+          '<div><em>Employment</em></div>'+
+          '<div>'+
+            '<div class="entry"><strong>Parasite 2.0</strong> \u2014 Architecture and Design Intern. Worked on exhibition and installation projects from early research through to final visuals: concept development, 3D modelling and renderings, and the presentation material used to bring ideas to clients. <em>Jan \u201926 \u2013 May \u201926</em></div>'+
+            '<div class="entry"><strong>AITALIA srl</strong> \u2014 Visual &amp; Graphic Designer. Curated the company\u2019s visual identity and communication (social media, presentations and editorial material) and kept the graphic language consistent across everything that went out. <em>2024 \u2013 2026</em></div>'+
+            '<div class="entry"><strong>Migliore + Servetto Architects</strong> \u2014 Exhibition Design Intern. Worked across scales, from product design to interior architecture, with spatial research, concept work, technical drawings and visual material. <em>Sep \u201925 \u2013 Dec \u201925</em></div>'+
+            '<div class="entry"><strong>Alcova srl</strong> \u2014 Press Office Assistant. Assisted with press communications and media relations before and during Alcova Miami 2024. Press and public accreditation, info desk management and event assistance at Villa Borsani (Varedo, MB). <em>MDW 2024</em></div>'+
+            '<div class="entry"><strong>Alcova Shop at Rinascente Milano</strong> \u2014 Client Assistance &amp; Sales. Provided customer service and supported sales activities at Alcova\u2019s temporary shop in Rinascente during MDW 2024. <em>MDW 2024</em></div>'+
+          '</div>'+
+        '</div>'+
+        '<hr>'+
+        '<div class="cv-row">'+
+          '<div><em>Skills</em></div>'+
+          '<div>'+
+            '<div class="entry"><strong>Interpersonal</strong> \u2014 Strong communication skills and ability to adapt to different contexts and working methods.</div>'+
+            '<div class="entry"><strong>Digital</strong> \u2014 Good knowledge of Adobe Illustrator, Photoshop, InDesign, Acrobat, Figma, MS Office Suite, Rhinoceros (intermediate level), AutoCAD, Blender, Canva.</div>'+
+          '</div>'+
+        '</div>'+
+        '<hr>'+
+        '<div class="cv-row">'+
+          '<div><em>Languages</em></div>'+
+          '<div>'+
+            '<div class="entry">Italian \u2014 native</div>'+
+            '<div class="entry">English \u2014 C1 (IELTS 2024)</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>';
+      overlay.className = 'open';
+      document.body.style.overflow = 'hidden';
+      overlay.querySelectorAll('[data-close]').forEach(function(c){
+        c.addEventListener('click', function(e){ e.preventDefault(); closeAll(); });
+      });
+    }
+
+    /* ---------- dispatch ---------- */
+    document.getElementById('index').addEventListener('click', function(e){
+      var a = e.target.closest('[data-act]');
+      if(!a) return;
+      e.preventDefault();
+      var act = a.getAttribute('data-act');
+      if(act === 'home'){ closeAll(); window.scrollTo(0,0); return; }
+      if(act === 'about'){ openAbout(); return; }
+      if(act === 'project'){ openProject(+a.getAttribute('data-i')); return; }
+    });
+
+    /* ---------- last updated date (M.D.YY) ---------- */
+    var d = new Date();
+    document.getElementById('clock').textContent =
+      (d.getMonth()+1)+'.'+d.getDate()+'.'+String(d.getFullYear()).slice(-2);
+
+  })();
+  </script>
+
+  <!-- =======================================================================
+       SLIDESHOW EDIT LAYER  (construction scaffold — delete to ship)
+       To remove: delete this whole <script> block AND the CSS block marked
+       "SLIDESHOW EDIT LAYER" in <head>. The slideshow then renders the
+       images already saved in .slideshow.state.json as static assets.
+  ======================================================================== -->
+  <script>
+  (function(){
+    "use strict";
+
+    /* =====================================================================
+       IMAGE EDITING ON/OFF
+       false = visitors can only VIEW/scroll images (adding & removing off).
+       true  = editor mode: drag-drop to add, tap thumbnails to remove.
+       Flip this back to true whenever you want to change the images again.
+       All the editing code below stays intact either way.
+    ===================================================================== */
+    var EDIT_IMAGES = false;
+
+    if(!EDIT_IMAGES) return;                                    // editing disabled
+    if(!(window.omelette && window.omelette.writeFile)) return; // only in editor
+
+    window.__slideshowEditor = function(box){
+      var key = box.getAttribute('data-key');
+      var ss = window.__ss;
+      box.setAttribute('data-edit','');
+      function imgs(){ return ss.store[key] || (ss.store[key] = []); }
+      var selected = new Set();
+
+      var input = document.createElement('input');
+      input.type='file';
+      input.accept='image/png,image/jpeg,image/webp,image/avif';
+      input.multiple=true; input.style.display='none';
+      box.appendChild(input);
+
+      function refreshEmpty(){
+        var e = box.querySelector('.sl-empty');
+        if(!imgs().length){
+          if(!e){ e=document.createElement('div'); e.className='sl-empty'; e.textContent='+'; box.appendChild(e); }
+        } else if(e){ e.remove(); }
+      }
+
+      function addFiles(list){
+        var files = [].slice.call(list).filter(function(f){ return /^image\//.test(f.type); });
+        if(!files.length) return;
+        var cap = ss.slots(key), room = cap - imgs().length;
+        if(room <= 0){ alert('Questo progetto ha raggiunto il massimo di '+cap+' immagini.'); return; }
+        if(files.length > room){ alert('Spazio solo per altre '+room+' immagini in questo progetto: aggiungo le prime '+room+'.'); files = files.slice(0, room); }
+        Promise.all(files.map(function(f){ return ss.encode(f); })).then(function(urls){
+          var a = imgs();
+          urls.forEach(function(u){ a.push(u); });
+          ss.save(key);
+          paint();
+        });
+      }
+
+      box.addEventListener('click', function(){ input.click(); });
+      input.addEventListener('change', function(){ addFiles(input.files); input.value=''; });
+      box.addEventListener('dragover', function(e){ e.preventDefault(); box.setAttribute('data-over',''); });
+      box.addEventListener('dragleave', function(e){ if(e.target===box) box.removeAttribute('data-over'); });
+      box.addEventListener('drop', function(e){
+        e.preventDefault(); box.removeAttribute('data-over');
+        if(e.dataTransfer && e.dataTransfer.files) addFiles(e.dataTransfer.files);
+      });
+
+      function buildManage(){
+        var pop = box.closest('.pop-img');
+        var old = pop.querySelector('.sl-manage-wrap'); if(old) old.remove();
+        refreshEmpty();
+        var arr = imgs();
+        if(!arr.length) return;
+        var wrap = document.createElement('div'); wrap.className='sl-manage-wrap';
+        var strip = document.createElement('div'); strip.className='sl-manage';
+        arr.forEach(function(u, idx){
+          var t = document.createElement('div'); t.className='sl-thumb';
+          if(selected.has(idx)) t.setAttribute('data-sel','');
+          var im = document.createElement('img'); im.src=u; im.alt='';
+          t.appendChild(im);
+          t.addEventListener('click', function(ev){
+            ev.stopPropagation();
+            if(selected.has(idx)) selected.delete(idx); else selected.add(idx);
+            buildManage();
+          });
+          strip.appendChild(t);
+        });
+        wrap.appendChild(strip);
+        var rm = document.createElement('div'); rm.className='sl-remove';
+        var link = document.createElement('a');
+        link.textContent = selected.size ? '(Remove '+selected.size+')' : '(Tap images to select)';
+        if(selected.size){
+          link.addEventListener('click', function(ev){
+            ev.stopPropagation();
+            ss.store[key] = arr.filter(function(_, idx){ return !selected.has(idx); });
+            selected.clear(); ss.save(key); paint();
+          });
+        }
+        rm.appendChild(link);
+        wrap.appendChild(rm);
+        pop.appendChild(wrap);
+      }
+
+      function paint(){ ss.render(box); buildManage(); ss.cycle(box); }
+      paint();
+    };
+  })();
+  </script>
+  <!-- ===================== END SLIDESHOW EDIT LAYER ===================== -->
+</body>
+</html>
