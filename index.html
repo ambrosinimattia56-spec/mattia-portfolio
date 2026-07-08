@@ -380,7 +380,7 @@
       },
 
       bodega: {
-        side: ['Bodega \u2013 cabinet','Product','ArchiThoughts\u2013ArchiTouch','FENIX\u00ae Scenario, 21 - 26 April 2026, Milan Design Week','','Parasite 2.0 x Bianco67','Design team: Luca Marullo, Eugenio Cosentino, Stefano Colombo, Noemi Giussani, Fabio Lucietto, Antoni Martorell, Mattia Ambrosini'],
+        side: ['Bodega \u2013 cabinet','Product','ArchiThoughts\u2013ArchiTouch','FENIX\u00ae Scenario, 21 - 26 April 2026, Milan Design Week','','Parasite 2.0 x Bianco67','Design team: Luca Marullo, Eugenio Cosentino, Stefano Colombo, Mattia Ambrosini'],
         intro: [
           "Bodega \u2013 Cabinet was developed by Parasite 2.0 for the third chapter of ArchiThoughts\u2013ArchiTouch, curated by Federica Sala at FENIX Scenario during Milan Design Week 2026. The piece takes mobile street-food structures and multifunctional domestic furniture as its starting points, working through the idea of micro-architecture as something that shapes social interaction \u2014 an object that reorganizes the space around it and sits between body, object and environment.",
           "Artwork by Iacopo Costanzo \u2014 Ph. Claudia Zalla"
@@ -475,6 +475,21 @@
       wrap.appendChild(a);
     });
 
+    /* Preload every project's images in the background so opening a project
+       is instant (no per-click fetch delay). Runs when the browser is idle,
+       one project at a time, and pre-decodes each image so the first frame
+       paints immediately. */
+    (function prefetchImages(){
+      function go(){
+        PROJECTS.forEach(function(_, i){
+          ssLoadKey('p' + (i + 1)).then(function(urls){
+            (urls || []).forEach(function(u){ var im = new Image(); im.src = u; });
+          }).catch(function(){});
+        });
+      }
+      if(window.requestIdleCallback) requestIdleCallback(go, {timeout:1200}); else setTimeout(go, 500);
+    })();
+
     /* ---------- overlay machinery ---------- */
     var overlay = document.getElementById('overlay');
     var slideTimer = null;
@@ -531,11 +546,13 @@
 
     var ssStore = {};                 // key -> [dataURL,...] in memory
     var ssManifest = null;            // cached only on success
+    var ssKeyP = {};                  // in-flight loads, deduped per key
     // Fetch a sidecar with retries — the editor preview can drop the first
     // request before its auth token is ready; failures must not be cached.
     function ssFetchJSON(name, tries){
       tries = tries==null ? 4 : tries;
-      return fetch(name, {cache:'no-store'})
+      var opts = (window.omelette && window.omelette.writeFile) ? {cache:'no-store'} : {};
+      return fetch(name, opts)
         .then(function(r){ if(!r.ok) throw new Error('http '+r.status); return r.json(); })
         .catch(function(){
           if(tries<=1) return null;
@@ -552,7 +569,8 @@
     }
     function ssLoadKey(key){
       if(ssStore[key] && ssStore[key].length) return Promise.resolve(ssStore[key]);
-      return ssLoadManifest().then(function(m){
+      if(ssKeyP[key]) return ssKeyP[key];
+      var p = ssLoadManifest().then(function(m){
         var n = m[key]|0, reqs = [];
         if(!n){ ssStore[key] = []; return ssStore[key]; }
         for(var i=0;i<n;i++){ (function(idx){
@@ -563,6 +581,9 @@
           return ssStore[key];
         });
       });
+      p.then(function(a){ if(!a || !a.length) delete ssKeyP[key]; }, function(){ delete ssKeyP[key]; });
+      ssKeyP[key] = p;
+      return p;
     }
 
     /* ---- writes (editor only) ---- */
