@@ -131,8 +131,12 @@
      the slideshow keeps its 16:9 ratio, only shrinking on short viewports
      so the whole window still fits without overflowing. */
   #overlay.expand .pop-img{
-    width:min(calc(100vw - var(--pad)*2), calc((100dvh - var(--pad)*3 - 3.4em) * 16 / 9));
-    padding-bottom:var(--pad);
+    --exp-w:min(calc(100vw - var(--pad)*2), 1180px, calc((100dvh - var(--pad)*2 - 3.4em) * 16 / 9));
+    width:var(--exp-w);
+    left:calc((100vw - var(--exp-w)) / 2);
+    top:50%;
+    transform:translateY(-50%);
+    padding-bottom:0;
     z-index:3;
   }
   /* Expand focuses on the image: hide the text panel underneath (it comes
