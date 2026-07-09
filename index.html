@@ -130,6 +130,8 @@
   /* image window grows to span the full page width (margin to margin);
      the slideshow keeps its 16:9 ratio, only shrinking on short viewports
      so the whole window still fits without overflowing. */
+  #overlay.expand{background:var(--bg);}
+
   #overlay.expand .pop-img{
     --exp-w:min(calc(100vw - var(--pad)*2), 1180px, calc((100dvh - var(--pad)*2 - 3.4em) * 16 / 9));
     width:var(--exp-w);
