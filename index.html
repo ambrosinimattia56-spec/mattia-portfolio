@@ -187,6 +187,13 @@
     .pop-txt{left:var(--pad);width:calc(100vw - var(--pad)*2);border-left:0;padding-left:0;background:var(--bg);
       padding-bottom:calc(var(--pad) + env(safe-area-inset-bottom) + 96px);}
     #overlay.expanded .pop-img{display:none;}
+    /* Expand is a desktop-only feature — hide the buttons and neutralise the
+       expand state entirely on mobile. */
+    .controls [data-expand],
+    .controls [data-collapse]{display:none !important;}
+    #overlay.expand{background:transparent;}
+    #overlay.expand .pop-img{width:calc(100vw - var(--pad)*2);left:var(--pad);top:var(--pad);transform:none;}
+    #overlay.expand .pop-txt{display:none;}
     .about-panel{left:0;width:100vw;
       padding-bottom:calc(var(--pad) + env(safe-area-inset-bottom) + 96px);}
     .about-top,.cv-row,.txt-grid{grid-template-columns:1fr;}
