@@ -123,6 +123,24 @@
   }
   #overlay.expanded .pop-txt{display:block;}
 
+  /* ---------- EXPAND (wide 16:9 image window, test: mycelia) ---------- */
+  .controls [data-collapse]{display:none;}
+  #overlay.expand .controls [data-expand]{display:none;}
+  #overlay.expand .controls [data-collapse]{display:inline;}
+  /* image window grows to span the full page width (margin to margin);
+     the slideshow keeps its 16:9 ratio, only shrinking on short viewports
+     so the whole window still fits without overflowing. */
+  #overlay.expand .pop-img{
+    width:min(calc(100vw - var(--pad)*2), calc((100dvh - var(--pad)*3 - 3.4em) * 16 / 9));
+    padding-bottom:var(--pad);
+    z-index:3;
+  }
+  /* Expand focuses on the image: hide the text panel underneath (it comes
+     back if it was open once you Collapse). */
+  #overlay.expand .pop-txt{display:none;}
+  /* match the caption gap to the page margin (left/right/top) */
+  #overlay.expand .cap{padding-top:var(--pad);}
+
   .txt-grid{
     display:grid;grid-template-columns:1fr 1fr;
     gap:0.5rem;align-items:start;
@@ -737,12 +755,16 @@
     function openProject(i){
       var p = PROJECTS[i];
       var d = projectData(p);
+      var controls = '<div class="controls">'+
+        '<a data-expand="1">(Expand)</a><a data-collapse="1">(Collapse)</a>'+
+        '<a data-more="1">(More\u2026)</a><a data-close="all">(Close)</a>'+
+        '</div>';
       overlay.innerHTML =
         '<div class="pop pop-img">'+
           slideshowHTML(i)+
           '<div class="cap">'+
             creditImg()+
-            '<div class="controls"><a data-more="1">(More…)</a><a data-close="all">(Close)</a></div>'+
+            controls+
           '</div>'+
         '</div>'+
         '<div class="pop pop-txt">'+
@@ -753,8 +775,13 @@
       startSlideshow();
       startCaptionCycle((d.side&&d.side[0])||d.title, d.captions || []);
 
+      var ex = overlay.querySelector('[data-expand]');
+      if(ex) ex.addEventListener('click', function(e){ e.preventDefault(); overlay.classList.add('expand'); });
+      var co = overlay.querySelector('[data-collapse]');
+      if(co) co.addEventListener('click', function(e){ e.preventDefault(); overlay.classList.remove('expand'); });
+
       overlay.querySelector('[data-more]').addEventListener('click', function(e){
-        e.preventDefault(); overlay.classList.add('expanded');
+        e.preventDefault(); overlay.classList.remove('expand'); overlay.classList.add('expanded');
       });
       overlay.querySelectorAll('[data-close]').forEach(function(c){
         c.addEventListener('click', function(e){
