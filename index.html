@@ -125,10 +125,13 @@
 
   /* ---------- EXPAND (wide 16:9 image window, test: mycelia) ---------- */
   .controls [data-collapse]{display:none;}
+  /* Expand screen (default on desktop): More + Close */
   #overlay.expand .controls [data-expand]{display:none;}
-  #overlay.expand .controls [data-collapse]{display:inline;}
-  #overlay.expand .controls [data-more],
-  #overlay.expand .controls [data-close]{display:none;}
+  #overlay.expand .controls [data-more]{display:inline;}
+  #overlay.expand .controls [data-close]{display:inline;}
+  /* More screen: Expand + Close */
+  #overlay.expanded .controls [data-more]{display:none;}
+  #overlay.expanded .controls [data-expand]{display:inline;}
   /* image window grows to span the full page width (margin to margin);
      the slideshow keeps its 16:9 ratio, only shrinking on short viewports
      so the whole window still fits without overflowing. */
@@ -785,13 +788,13 @@
         '<div class="pop pop-txt">'+
           projectTemplateHTML(d)+
         '</div>';
-      overlay.className = 'open';
+      overlay.className = window.matchMedia('(min-width:761px)').matches ? 'open expand' : 'open';
       document.body.style.overflow = 'hidden';
       startSlideshow();
       startCaptionCycle((d.side&&d.side[0])||d.title, d.captions || []);
 
       var ex = overlay.querySelector('[data-expand]');
-      if(ex) ex.addEventListener('click', function(e){ e.preventDefault(); overlay.classList.add('expand'); });
+      if(ex) ex.addEventListener('click', function(e){ e.preventDefault(); overlay.classList.remove('expanded'); overlay.classList.add('expand'); });
       var co = overlay.querySelector('[data-collapse]');
       if(co) co.addEventListener('click', function(e){ e.preventDefault(); overlay.classList.remove('expand'); });
 
